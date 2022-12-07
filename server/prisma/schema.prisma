@@ -1,0 +1,207 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+
+model User {
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  name            String
+  password        String
+  about           String?
+  cover           String?
+  authToken       AuthToken?        @relation(fields: [authTokenId], references: [id])
+  authTokenId     String?
+  createdChatroom Chatroom[]
+  chatroom        UsersOnChatroom[]
+  viewedPages     ViewedPages[]
+  posts           Post[]
+  articles        Article[]
+  createdEvents   Event[]
+  events          MembersOnEvents[]
+  createdGroups   Group[]
+  groups          MembersOnGroups[]
+  comments        Comment[]
+  likedPosts      LikesOnPosts[]
+  messages        Message[]
+}
+
+model ViewedPages {
+  id       Int      @id @default(autoincrement())
+  home     DateTime @default(now())
+  chat     DateTime @default(now())
+  groups   DateTime @default(now())
+  events   DateTime @default(now())
+  articles DateTime @default(now())
+  calendar DateTime @default(now())
+  user     User?    @relation(fields: [userId], references: [id])
+  userId   Int?
+}
+
+model UsersOnChatroom {
+  id         Int       @id @default(autoincrement())
+  user       User?     @relation(fields: [userId], references: [id])
+  userId     Int?
+  chatroom   Chatroom? @relation(fields: [chatroomId], references: [id])
+  chatroomId Int?
+}
+
+model Chatroom {
+  id        Int               @id @default(autoincrement())
+  name      String
+  admin     User              @relation(fields: [adminId], references: [id])
+  adminId   Int
+  createdAt DateTime          @default(now())
+  users     UsersOnChatroom[]
+  messages  Message[]
+  post      Post?             @relation(fields: [postId], references: [id])
+  postId    Int?
+}
+
+model Message {
+  id         Int       @id @default(autoincrement())
+  content    String
+  createdAt  DateTime  @default(now())
+  chatroom   Chatroom? @relation(fields: [chatroomId], references: [id])
+  chatroomId Int?
+  user       User?     @relation(fields: [userId], references: [id])
+  userId     Int?
+}
+
+
+model Post {
+  id            Int            @id @default(autoincrement())
+  cover         String?
+  content       String?
+  createdAt     DateTime       @default(now())
+  publishedAt   DateTime       @default(now())
+  marketplace   Marketplace?   @relation(fields: [marketplaceId], references: [id])
+  marketplaceId Int?           @unique
+  support       Support?       @relation(fields: [supportId], references: [id])
+  supportId     Int?           @unique
+  author        User           @relation(fields: [authorId], references: [id])
+  authorId      Int
+  group         Group?         @relation(fields: [groupId], references: [id])
+  groupId       Int?
+  event         Event?         @relation(fields: [eventId], references: [id])
+  eventId       Int?
+  comments      Comment[]
+  likes         LikesOnPosts[]
+  chatroom      Chatroom[]
+}
+
+model LikesOnPosts {
+  post   Post @relation(fields: [postId], references: [id])
+  postId Int
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  @@id([userId, postId])
+}
+
+model Marketplace {
+  id       Int                 @id @default(autoincrement())
+  name     String
+  price    Float
+  post     Post?
+}
+
+
+
+model Support {
+  id       Int             @id @default(autoincrement())
+
+  post     Post?
+}
+
+
+model Article {
+  id          Int              @id @default(autoincrement())
+  title       String
+  subTitle    String?
+  cover       String?
+  content     String?         
+  createdAt   DateTime         @default(now())
+  publishedAt DateTime         @default(now())
+  author      User             @relation(fields: [authorId], references: [id])
+  authorId    Int
+}
+
+
+
+model Event {
+  id          Int               @id @default(autoincrement())
+  title       String
+  cover       String?
+  location    String            @default("Jena")
+  description String?           
+  date        DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+  publishedAt DateTime          @default(now())
+  isPrivate   Boolean           @default(false)
+  admin       User              @relation(fields: [adminId], references: [id])
+  adminId     Int
+  group       Group?            @relation(fields: [groupId], references: [id])
+  groupId     Int?
+  members     MembersOnEvents[]
+  posts       Post[]
+}
+
+model MembersOnEvents {
+  event         Event         @relation(fields: [eventId], references: [id])
+  eventId       Int
+  member        User          @relation(fields: [memberId], references: [id])
+  memberId      Int
+
+  @@id([eventId, memberId])
+}
+
+model Group {
+  id          Int               @id @default(autoincrement())
+  title       String
+  cover       String?
+  description String?           
+  createdAt   DateTime          @default(now())
+  publishedAt DateTime          @default(now())
+  isPrivate   Boolean           @default(false)
+  admin       User              @relation(fields: [adminId], references: [id])
+  adminId     Int
+  members     MembersOnGroups[]
+  posts       Post[]
+  events      Event[]
+}
+
+model MembersOnGroups {
+  group         Group         @relation(fields: [groupId], references: [id])
+  groupId       Int
+  member        User          @relation(fields: [memberId], references: [id])
+  memberId      Int
+
+  @@id([groupId, memberId])
+}
+
+
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+  content     String
+  createdAt   DateTime @default(now())
+  publishedAt DateTime @default(now())
+  author      User?    @relation(fields: [authorId], references: [id])
+  authorId    Int?
+  post        Post?    @relation(fields: [postId], references: [id])
+  postId      Int?
+}
+
+model AuthToken {
+  id    String @id @default(uuid())
+  users User[]
+}
